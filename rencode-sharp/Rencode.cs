@@ -51,12 +51,6 @@ namespace rencodesharp
 		/// <summary>
 		/// Dump data structure to str.
 		/// </summary>
-		/// <param name='x'>
-		/// Object to Dump
-		/// </param>
-		/// <param name='float_bits'>
-		/// Float Bits, Either 32 or 64.
-		/// </param>
 		public static string dumps(object x, int float_bits)
 		{
 			if(!encode_func.ContainsKey(x.GetType())) return null;

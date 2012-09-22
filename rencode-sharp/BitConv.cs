@@ -7,15 +7,6 @@ namespace rencodesharp
 		/// <summary>
 		/// Pack the specified object into network order byte format.
 		/// </summary>
-		/// <param name='x'>
-		/// object to pack
-		/// </param>
-		/// <param name='n'>
-		/// 1 : b
-		/// 2 : h
-		/// 4 : l
-		/// 8 : q
-		/// </param>
 		public static string Pack(object x, int n)
 		{
 			byte[] b = new byte[] {};
