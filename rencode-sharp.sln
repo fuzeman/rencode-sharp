@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rencode-sharp", "rencode-sharp\rencode-sharp.csproj", "{07A4623C-C9CD-474C-8793-1817E81E83D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rencode-sharp_tests", "tests\rencode-sharp_tests.csproj", "{8A9AC349-F20D-41A7-AC49-2D4458332289}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{07A4623C-C9CD-474C-8793-1817E81E83D4}.Debug|x86.ActiveCfg = Debug|x86
+		{07A4623C-C9CD-474C-8793-1817E81E83D4}.Debug|x86.Build.0 = Debug|x86
+		{07A4623C-C9CD-474C-8793-1817E81E83D4}.Release|x86.ActiveCfg = Release|x86
+		{07A4623C-C9CD-474C-8793-1817E81E83D4}.Release|x86.Build.0 = Release|x86
+		{8A9AC349-F20D-41A7-AC49-2D4458332289}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8A9AC349-F20D-41A7-AC49-2D4458332289}.Debug|x86.Build.0 = Debug|Any CPU
+		{8A9AC349-F20D-41A7-AC49-2D4458332289}.Release|x86.ActiveCfg = Release|Any CPU
+		{8A9AC349-F20D-41A7-AC49-2D4458332289}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = tests\rencode-sharp_tests.csproj
+	EndGlobalSection
+EndGlobal
