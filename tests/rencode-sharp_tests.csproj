@@ -38,6 +38,8 @@
   <ItemGroup>
     <Compile Include="PackTest.cs" />
     <Compile Include="RencodeTest.cs" />
+    <Compile Include="BStructTest.cs" />
+    <Compile Include="UtilTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

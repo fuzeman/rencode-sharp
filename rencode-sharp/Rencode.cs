@@ -38,6 +38,7 @@ namespace rencodesharp
 		public const int STR_FIXED_COUNT = 64;
 
 		public delegate string EncodeDelegate(object x);
+		public delegate object DecodeDelegate(string x, int f, out int endIndex);
 
 		private static Dictionary<Type, EncodeDelegate> encode_func = new Dictionary<Type, EncodeDelegate>(){
 			{typeof(string),	encode_string},
@@ -45,17 +46,42 @@ namespace rencodesharp
 			{typeof(long),		encode_int}
 		};
 
+		private static Dictionary<char, DecodeDelegate> decode_func = new Dictionary<char, DecodeDelegate>(){
+			{'0', decode_string},
+			{'1', decode_string},
+			{'2', decode_string},
+			{'3', decode_string},
+			{'4', decode_string},
+			{'5', decode_string},
+			{'6', decode_string},
+			{'7', decode_string},
+			{'8', decode_string},
+			{'9', decode_string},
+			{CHR_INT,	decode_int},
+			{CHR_INT1,	decode_int1},
+			{CHR_INT2,	decode_int2},
+			{CHR_INT4,	decode_int4},
+			{CHR_INT8,	decode_int8},
+		};
+
 		#region Core
 
 		public static string dumps(object x) { return dumps(x, 32); }
-		/// <summary>
-		/// Dump data structure to str.
-		/// </summary>
 		public static string dumps(object x, int float_bits)
 		{
 			if(!encode_func.ContainsKey(x.GetType())) return null;
 
 			return encode_func[x.GetType()](x);
+		}
+
+		public static object loads(string x)
+		{
+			Console.WriteLine(x);
+			Console.WriteLine("loads: " + ((int)x[0]).ToString());
+			if(!decode_func.ContainsKey(x[0])) return null;
+
+			int endIndex;
+			return decode_func[x[0]](x, 0, out endIndex);
 		}
 
 		#endregion
@@ -127,6 +153,75 @@ namespace rencodesharp
 		#endregion
 
 		#region Decode
+
+		public static string decode_string(string x, int f, out int endIndex)
+		{
+			int colon = x.IndexOf(':', f);
+			int n = Convert.ToInt32(x.Substring(f, colon)); // TODO: doesn't support long length
+			Console.WriteLine(n);
+
+			colon += 1;
+			string s = x.Substring(colon, (int)n);
+
+			endIndex = colon+n;
+			return s;
+		}
+
+		public static object decode_int(string x, int f, out int endIndex)
+		{
+			Console.WriteLine("decode_int");
+			Console.WriteLine(x);
+			f += 1;
+			int newf = x.IndexOf(CHR_TERM, f);
+			if(newf - f >= MAX_INT_LENGTH) {
+				throw new Exception("Overflow");
+			}
+			long n = Convert.ToInt64(x.Substring(f, newf - f));
+
+			if(x[f] == '-'){
+				if(x[f + 1] == '0') {
+					throw new Exception("Value Error");
+				}
+			}
+			else if(x[f] == '0' && newf != f+1) {
+				throw new Exception("Value Error");
+			}
+
+			endIndex = newf+1;
+			return n;
+		}
+
+		public static object decode_int1(string x, int f, out int endIndex)
+		{
+			f += 1;
+			endIndex = f + 1;
+
+			return BStruct.ToInt1(Util.StringBytes(x.Substring(f)), 0);
+		}
+
+		public static object decode_int2(string x, int f, out int endIndex)
+		{
+			f += 1;
+			endIndex = f + 2;
+
+			return BStruct.ToInt2(Util.StringBytes(x.Substring(f)), 0);
+		}
+
+		public static object decode_int4(string x, int f, out int endIndex)
+		{
+			f += 1;
+			endIndex = f + 4;
+
+			return BStruct.ToInt4(Util.StringBytes(x.Substring(f)), 0);
+		}
+
+		public static object decode_int8(string x, int f, out int endIndex)
+		{
+			f += 1;
+			endIndex = f + 8;
+
+			return BStruct.ToInt8(Util.StringBytes(x.Substring(f)), 0);
+		}
 
 		#endregion
 	}

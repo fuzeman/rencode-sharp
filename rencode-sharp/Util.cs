@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace rencodesharp
 {
@@ -15,6 +17,16 @@ namespace rencodesharp
 				output += r[i].ToString();
 			}
 			return output;
+		}
+
+		public static byte[] StringBytes(string s)
+		{
+			byte[] b = new byte[s.Length];
+			for(int i = 0; i < s.Length; i++)
+			{
+				b[i] = (byte)(int)s[i];
+			}
+			return b;
 		}
 	}
 }
