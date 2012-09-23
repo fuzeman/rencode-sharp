@@ -27,8 +27,6 @@ namespace rencodesharp
 			byte[] b = new byte[n];
 			for(int i = 0; i < x.Length; i++)
 			{
-				Console.Write("b[" + i.ToString() + "] ");
-				Console.WriteLine((byte)x[i]);
 				b[i] = (byte)x[i];
 			}
 
@@ -82,7 +80,6 @@ namespace rencodesharp
 		{
 			for(int i = x.Length; i < n; i++)
 			{
-				Console.WriteLine(i);
 				x = "\x00" + x;
 			}
 			return x;

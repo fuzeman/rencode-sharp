@@ -15,6 +15,7 @@ namespace rencodesharp_tests
 			Assert.AreEqual("78:abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz", Rencode.dumps("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"));
 
 			// DECODE STRING
+			Assert.AreEqual("Hello", Rencode.loads("\x85Hello"));
 			Assert.AreEqual("abcdefghij", Rencode.loads("10:abcdefghij"));
 		}
 
@@ -56,6 +57,63 @@ namespace rencodesharp_tests
 			// DECODE INT8
 			Assert.AreEqual(9223372036854700000L, Rencode.loads(Rencode.CHR_INT8 + "\xE0\xD7\xFE\xFF\xFF\xFF\xFF\x7F"));
 			Assert.AreEqual(-9223372036854700000L, Rencode.loads(Rencode.CHR_INT8 + "\x20\x28\x01\x00\x00\x00\x00\x80"));
+		}
+
+		[Test()]
+		public void List()
+		{
+			Assert.AreEqual(new object[] { "one", "two", "three" },
+				Rencode.loads(
+					Rencode.dumps(new object[] { "one", "two", "three" })
+				)
+			);
+
+			Assert.AreEqual(new object[] { 1, 2, 3 },
+				Rencode.loads(
+					Rencode.dumps(new object[] { 1, 2, 3 })
+				)
+			);
+
+			Assert.AreEqual(new object[] { -1, -2, -3 },
+				Rencode.loads(
+					Rencode.dumps(new object[] { -1, -2, -3 })
+				)
+			);
+
+			Assert.AreEqual(new object[] {
+					new object[] { "one", "two", "three" },
+					new object[] { "four", "five", "six" }
+				},
+				Rencode.loads(
+					Rencode.dumps(new object[] {
+						new object[] { "one", "two", "three" },
+						new object[] { "four", "five", "six" }
+					})
+				)
+			);
+
+			Assert.AreEqual(new object[] {
+					new object[] { 1, 2, 3 },
+					new object[] { 4, 5, 6 }
+				},
+				Rencode.loads(
+					Rencode.dumps(new object[] {
+						new object[] { 1, 2, 3 },
+						new object[] { 4, 5, 6 }
+					})
+				)
+			);
+
+			object[] non_fixed_list_test = new object[100];
+			Random rand = new Random();
+			for(int i = 0; i < 100; i++)
+			{
+				non_fixed_list_test[i] = rand.Next();
+			}
+			string dump = Rencode.dumps(non_fixed_list_test);
+			Assert.AreEqual(Rencode.CHR_LIST, (int)dump[0]);
+			Assert.AreEqual(Rencode.CHR_TERM, (int)dump[dump.Length - 1]);
+			Assert.AreEqual(non_fixed_list_test, Rencode.loads(dump));
 		}
 	}
 }

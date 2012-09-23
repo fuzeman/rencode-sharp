@@ -37,48 +37,122 @@ namespace rencodesharp
 		public const int STR_FIXED_START = 128;
 		public const int STR_FIXED_COUNT = 64;
 
-		public delegate string EncodeDelegate(object x);
+		// Lists with length embedded in typecode.
+		public const int LIST_FIXED_START = STR_FIXED_START+STR_FIXED_COUNT;
+		public const int LIST_FIXED_COUNT = 64;
+
+		// Dictionaries with length embedded in typecode.
+		public const int DICT_FIXED_START = 102;
+		public const int DICT_FIXED_COUNT = 25;
+
+		public delegate void EncodeDelegate(object x, List<object> r);
 		public delegate object DecodeDelegate(string x, int f, out int endIndex);
 
 		private static Dictionary<Type, EncodeDelegate> encode_func = new Dictionary<Type, EncodeDelegate>(){
 			{typeof(string),	encode_string},
 			{typeof(int),		encode_int},
-			{typeof(long),		encode_int}
+			{typeof(long),		encode_int},
+			{typeof(object[]),	encode_list},
 		};
 
 		private static Dictionary<char, DecodeDelegate> decode_func = new Dictionary<char, DecodeDelegate>(){
-			{'0', decode_string},
-			{'1', decode_string},
-			{'2', decode_string},
-			{'3', decode_string},
-			{'4', decode_string},
-			{'5', decode_string},
-			{'6', decode_string},
-			{'7', decode_string},
-			{'8', decode_string},
-			{'9', decode_string},
+			{'0', 		decode_string},
+			{'1', 		decode_string},
+			{'2', 		decode_string},
+			{'3', 		decode_string},
+			{'4', 		decode_string},
+			{'5', 		decode_string},
+			{'6', 		decode_string},
+			{'7', 		decode_string},
+			{'8', 		decode_string},
+			{'9', 		decode_string},
 			{CHR_INT,	decode_int},
 			{CHR_INT1,	decode_int1},
 			{CHR_INT2,	decode_int2},
 			{CHR_INT4,	decode_int4},
 			{CHR_INT8,	decode_int8},
+			{CHR_LIST,	decode_list},
 		};
+
+		#region Initialization
+
+		static Rencode()
+		{
+			for(int i = 0; i < STR_FIXED_COUNT; i++) {
+				decode_func.Add((char)(STR_FIXED_START + i), decode_fixed_string);
+			}
+
+			for(int i = 0; i < LIST_FIXED_COUNT; i++) {
+				decode_func.Add((char)(LIST_FIXED_START + i), decode_fixed_list);
+			}
+
+			for(int i = 0; i < INT_POS_FIXED_COUNT; i++) {
+				decode_func.Add((char)(INT_POS_FIXED_START + i), decode_fixed_pos_int);
+			}
+
+			for(int i = 0; i < INT_NEG_FIXED_COUNT; i++) {
+				decode_func.Add((char)(INT_NEG_FIXED_START + i), decode_fixed_neg_int);
+			}
+		}
+
+		private static object decode_fixed_string(string x, int f, out int endIndex)
+		{
+			endIndex = f + 1 + ((int)x[f]) - STR_FIXED_START;
+			return x.Substring(f + 1, ((int)x[f]) - STR_FIXED_START);
+		}
+
+		private static object decode_fixed_pos_int(string x, int f, out int endIndex)
+		{
+			endIndex = f + 1;
+			return ((int)x[f]) - INT_POS_FIXED_START;
+		}
+
+		private static object decode_fixed_neg_int(string x, int f, out int endIndex)
+		{
+			endIndex = f + 1;
+			return -1 - (((int)x[f]) - INT_NEG_FIXED_START);
+		}
+
+		private static object decode_fixed_list(string x, int f, out int endIndex)
+		{
+			List<object> r = new List<object>();
+			int list_count = ((int)x[f]) - LIST_FIXED_START;
+			f = f + 1;
+
+			for(int i = 0; i < list_count; i++)
+			{
+				object v = decode_func[x[f]](x, f, out f);
+				r.Add(v);
+			}
+
+			endIndex = f;
+			return r.ToArray();
+		}
+
+		#endregion
 
 		#region Core
 
 		public static string dumps(object x) { return dumps(x, 32); }
 		public static string dumps(object x, int float_bits)
 		{
-			if(!encode_func.ContainsKey(x.GetType())) return null;
+			if(!encode_func.ContainsKey(x.GetType())){
+				Console.WriteLine("No Encoder Found");
+				return null;
+			}
 
-			return encode_func[x.GetType()](x);
+			List<object> r = new List<object>();
+			encode_func[x.GetType()](x, r);
+
+			return Util.Join(r);
 		}
 
 		public static object loads(string x)
 		{
-			Console.WriteLine(x);
-			Console.WriteLine("loads: " + ((int)x[0]).ToString());
-			if(!decode_func.ContainsKey(x[0])) return null;
+			if(!decode_func.ContainsKey(x[0])){
+				Console.WriteLine("No Decoder Found");
+				return null;
+			}
 
 			int endIndex;
 			return decode_func[x[0]](x, 0, out endIndex);
@@ -88,11 +162,8 @@ namespace rencodesharp
 
 		#region Encode
 
-		public static string encode_string(object x)
+		public static void encode_string(object x, List<object> r)
 		{
-			List<object> r = new List<object>();
-			Console.WriteLine("encode_string");
-
 			string xs = (string)x;
 
 			if (xs.Length < STR_FIXED_COUNT) {
@@ -103,15 +174,10 @@ namespace rencodesharp
 				r.Add(':');
 				r.Add(xs);
 			}
-
-			return Util.Join(r);
 		}
 
-		public static string encode_int(object x)
+		public static void encode_int(object x, List<object> r)
 		{
-			List<object> r = new List<object>();
-			Console.WriteLine("encode_int");
-
 			// Check to determine if long type is able
 			// to be packed inside an Int32 or is actually
 			// an Int64 value.
@@ -146,8 +212,23 @@ namespace rencodesharp
 				r.Add(s);
 				r.Add(CHR_TERM);
 			}
+		}
 
-			return Util.Join(r);
+		public static void encode_list(object x, List<object> r)
+		{
+			if(x.GetType() != typeof(object[])) throw new Exception();
+			object[] xl = (object[])x;
+
+			if(xl.Length < LIST_FIXED_COUNT) {
+				r.Add((char)(LIST_FIXED_START + xl.Length));
+				foreach(object e in xl)
+					encode_func[e.GetType()](e, r);
+			} else {
+				r.Add(CHR_LIST);
+				foreach(object e in xl)
+					encode_func[e.GetType()](e, r);
+				r.Add(CHR_TERM);
+			}
 		}
 
 		#endregion
@@ -158,7 +239,6 @@ namespace rencodesharp
 		{
 			int colon = x.IndexOf(':', f);
 			int n = Convert.ToInt32(x.Substring(f, colon)); // TODO: doesn't support long length
-			Console.WriteLine(n);
 
 			colon += 1;
 			string s = x.Substring(colon, (int)n);
@@ -169,8 +249,6 @@ namespace rencodesharp
 
 		public static object decode_int(string x, int f, out int endIndex)
 		{
-			Console.WriteLine("decode_int");
-			Console.WriteLine(x);
 			f += 1;
 			int newf = x.IndexOf(CHR_TERM, f);
 			if(newf - f >= MAX_INT_LENGTH) {
@@ -196,7 +274,7 @@ namespace rencodesharp
 			f += 1;
 			endIndex = f + 1;
 
-			return BStruct.ToInt1(Util.StringBytes(x.Substring(f)), 0);
+			return BStruct.ToInt1(Util.StringBytes(x.Substring(f, 1)), 0);
 		}
 
 		public static object decode_int2(string x, int f, out int endIndex)
@@ -204,7 +282,7 @@ namespace rencodesharp
 			f += 1;
 			endIndex = f + 2;
 
-			return BStruct.ToInt2(Util.StringBytes(x.Substring(f)), 0);
+			return BStruct.ToInt2(Util.StringBytes(x.Substring(f, 2)), 0);
 		}
 
 		public static object decode_int4(string x, int f, out int endIndex)
@@ -212,7 +290,7 @@ namespace rencodesharp
 			f += 1;
 			endIndex = f + 4;
 
-			return BStruct.ToInt4(Util.StringBytes(x.Substring(f)), 0);
+			return BStruct.ToInt4(Util.StringBytes(x.Substring(f, 4)), 0);
 		}
 
 		public static object decode_int8(string x, int f, out int endIndex)
@@ -220,7 +298,20 @@ namespace rencodesharp
 			f += 1;
 			endIndex = f + 8;
 
-			return BStruct.ToInt8(Util.StringBytes(x.Substring(f)), 0);
+			return BStruct.ToInt8(Util.StringBytes(x.Substring(f, 8)), 0);
+		}
+
+		public static object decode_list(string x, int f, out int endIndex)
+		{
+			List<object> r = new List<object>();
+			f = f + 1;
+			while(x[f] != CHR_TERM)
+			{
+				object v = decode_func[x[f]](x, f, out f);
+				r.Add(v);
+			}
+			endIndex = f + 1;
+			return r;
 		}
 
 		#endregion
