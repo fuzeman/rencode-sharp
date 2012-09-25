@@ -1,3 +1,22 @@
+// rencode-sharp -- Web safe object pickling/unpickling.
+
+// Copyright (C) 2012 Dean Gardiner <gardiner91@gmail.com>
+// C# port of rencode.py: Public domain, Connelly Barnes 2006-2007.
+// Rencode, Modified version of bencode from the BitTorrent project.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -50,10 +69,17 @@ namespace rencodesharp
 
 		private static Dictionary<Type, EncodeDelegate> encode_func = new Dictionary<Type, EncodeDelegate>(){
 			{typeof(string),						encode_string},
+
 			{typeof(int),							encode_int},
 			{typeof(long),							encode_int},
+
 			{typeof(object[]),						encode_list},
 			{typeof(Dictionary<object, object>),	encode_dict}
+
+			// Float 32
+			// Float 64
+			// Bool Type (true, false)
+			// None Type (null)
 		};
 
 		private static Dictionary<char, DecodeDelegate> decode_func = new Dictionary<char, DecodeDelegate>(){
@@ -67,13 +93,22 @@ namespace rencodesharp
 			{'7', 		decode_string},
 			{'8', 		decode_string},
 			{'9', 		decode_string},
+
 			{CHR_INT,	decode_int},
 			{CHR_INT1,	decode_int1},
 			{CHR_INT2,	decode_int2},
 			{CHR_INT4,	decode_int4},
 			{CHR_INT8,	decode_int8},
+
 			{CHR_LIST,	decode_list},
 			{CHR_DICT,	decode_dict},
+
+			// CHR_TRUE
+			// CHR_FALSE
+			// CHR_NONE
+
+			// CHR_FLOAT32
+			// CHR_FLOAT64
 		};
 
 		#region Initialization
