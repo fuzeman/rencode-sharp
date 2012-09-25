@@ -36,8 +36,8 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="Rencode.cs" />
-    <Compile Include="BitConv.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="BStruct.cs" />
+    <Compile Include="RencodeConst.cs" />
   </ItemGroup>
 </Project>

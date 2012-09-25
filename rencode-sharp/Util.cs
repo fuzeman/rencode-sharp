@@ -26,7 +26,7 @@ namespace rencodesharp
 	public class Util
 	{
 		/// <summary>
-		/// Join the List of objects by converting everything to a string.
+		/// Join the List of objects by converting each item to a string.
 		/// </summary>
 		public static string Join(List<object> r)
 		{
@@ -38,6 +38,9 @@ namespace rencodesharp
 			return output;
 		}
 
+		/// <summary>
+		/// Convert's string to byte array.
+		/// </summary>
 		public static byte[] StringBytes(string s)
 		{
 			byte[] b = new byte[s.Length];
@@ -46,6 +49,18 @@ namespace rencodesharp
 				b[i] = (byte)(int)s[i];
 			}
 			return b;
+		}
+
+		/// <summary>
+		/// Pad's the front of a string with NUL bytes.
+		/// </summary>
+		public static string StringPad(string x, int n)
+		{
+			for(int i = x.Length; i < n; i++)
+			{
+				x = "\x00" + x;
+			}
+			return x;
 		}
 	}
 }

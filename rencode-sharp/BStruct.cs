@@ -23,6 +23,87 @@ namespace rencodesharp
 {
 	public class BStruct
 	{
+		/// <summary>
+		/// Pack the object 'x' into (network order byte format).
+		/// </summary>
+		public static string Pack(object x, int n)
+		{
+			byte[] b = ToBytes(x);
+
+			string output = "";
+			for(int i = 0; i < b.Length; i++)
+			{
+				output += (char)b[i];
+			}
+
+			return output.Substring(0, n);
+		}
+
+		/// <summary>
+		/// Unpack the string 'x' (network order byte format) into object.
+		/// </summary>
+		public static object Unpack(string x, int n)
+		{
+			x = Util.StringPad(x, n);
+
+			byte[] b = new byte[n];
+			for(int i = 0; i < x.Length; i++)
+			{
+				b[i] = (byte)x[i];
+			}
+
+			if(b.Length == 1) return BStruct.ToInt1(b, 0);
+			if(b.Length == 2) return BStruct.ToInt2(b, 0);
+			if(b.Length == 4) return BStruct.ToInt4(b, 0);
+			if(b.Length == 8) return BStruct.ToInt8(b, 0);
+			return null;
+		}
+
+		/// <summary>
+		/// Convert object 'x' to a byte array.
+		/// </summary>
+		public static byte[] ToBytes(object x)
+		{
+			byte[] b;
+
+			if(x.GetType() == typeof(uint))
+				return BitConverter.GetBytes((uint)x);
+			else if(x.GetType() == typeof(ushort))
+				return BitConverter.GetBytes((ushort)x);
+			else if(x.GetType() == typeof(ulong))
+				return BitConverter.GetBytes((ulong)x);
+			else if(x.GetType() == typeof(double))
+				return BitConverter.GetBytes((double)x);
+			else if(x.GetType() == typeof(float))
+				return BitConverter.GetBytes((float)x);
+			else if(x.GetType() == typeof(char))
+				return BitConverter.GetBytes((char)x);
+			else if(x.GetType() == typeof(bool))
+				return BitConverter.GetBytes((bool)x);
+			else if(x.GetType() == typeof(short)) {
+				b = new byte[2];
+				BStruct.GetBytes((short)x, b, 0);
+				return b;
+			}
+			else if(x.GetType() == typeof(long)) {
+				b = new byte[8];
+				BStruct.GetBytes((long)x, b, 0);
+				return b;
+			}
+			else if(x.GetType() == typeof(int)) {
+				b = new byte[4];
+				BStruct.GetBytes((int)x, b, 0);
+				return b;
+			}
+			else {
+				Console.WriteLine("pack unsupported");
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Gets the bytes of an Int32.
+		/// </summary>
 		public unsafe static void GetBytes(Int32 value, byte[] buffer, int startIndex)
 		{
 			fixed(byte* numRef = buffer)
@@ -31,6 +112,9 @@ namespace rencodesharp
 			}
 		}
 
+		/// <summary>
+		/// Gets the bytes of an Int64.
+		/// </summary>
 		public unsafe static void GetBytes(Int64 value, byte[] buffer, int startingIndex)
         {
             fixed(byte* numRef = buffer)
@@ -62,11 +146,17 @@ namespace rencodesharp
 			}
 		}
 
+		/// <summary>
+		/// Converts byte array to INT2 (16 bit integer)
+		/// </summary>
 		public static int ToInt2(byte[] value, int startIndex)
 		{
 			return BitConverter.ToInt16(value, startIndex);
 		}
 
+		/// <summary>
+		/// Converts byte array to INT4 (32 bit integer)
+		/// </summary>
 		public static int ToInt4(byte[] value, int startIndex)
 		{
 			if(value.Length == 4)
@@ -75,10 +165,35 @@ namespace rencodesharp
 				throw new ArgumentException("\"value\" doesn't have 4 bytes.");
 		}
 
+		/// <summary>
+		/// Converts byte array to INT8 (64 bit integer)
+		/// </summary>
 		public static long ToInt8(byte[] value, int startIndex)
 		{
 			if(value.Length == 8)
 				return BitConverter.ToInt64(value, startIndex);
+			else
+				throw new ArgumentException("\"value\" doesn't have 8 bytes.");
+		}
+
+		/// <summary>
+		/// Converts byte array to Float (32 bit float)
+		/// </summary>
+		public static float ToFloat(byte[] value, int startIndex)
+		{
+			if(value.Length == 4)
+				return BitConverter.ToSingle(value, startIndex);
+			else
+				throw new ArgumentException("\"value\" doesn't have 4 bytes.");
+		}
+
+		/// <summary>
+		/// Converts byte array to Double (64 bit float)
+		/// </summary>
+		public static double ToDouble(byte[] value, int startIndex)
+		{
+			if(value.Length == 8)
+				return BitConverter.ToDouble(value, startIndex);
 			else
 				throw new ArgumentException("\"value\" doesn't have 8 bytes.");
 		}
