@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using rencodesharp;
 
 namespace rencodesharp_tests
@@ -114,6 +116,36 @@ namespace rencodesharp_tests
 			Assert.AreEqual(Rencode.CHR_LIST, (int)dump[0]);
 			Assert.AreEqual(Rencode.CHR_TERM, (int)dump[dump.Length - 1]);
 			Assert.AreEqual(non_fixed_list_test, Rencode.loads(dump));
+		}
+
+		[Test()]
+		public void Dict()
+		{
+			Dictionary<object, object> dOne = new Dictionary<object, object> {
+				{"Hello", 12},
+				{"Blah", 15}
+			};
+
+			// Test Encode
+			string dump = Rencode.dumps(dOne);
+			Assert.AreEqual(((char)(Rencode.DICT_FIXED_START + 2)).ToString() +
+			                ((char)(Rencode.STR_FIXED_START + 5)).ToString() +
+			                "Hello" +
+			                ((char)12) + 
+			                ((char)(Rencode.STR_FIXED_START + 4)).ToString() +
+			                "Blah" +
+			                ((char)15), dump);
+
+			Assert.AreEqual(dOne, Rencode.loads(dump));
+
+
+			Dictionary<object, object> dTwo = new Dictionary<object, object>();
+			for(int i = 0; i < 35; i++)
+			{
+				dTwo.Add(i.ToString(), i);
+			}
+
+			Assert.AreEqual(dTwo, Rencode.loads(Rencode.dumps(dTwo)));
 		}
 	}
 }

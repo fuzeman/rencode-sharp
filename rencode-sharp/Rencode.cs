@@ -49,10 +49,11 @@ namespace rencodesharp
 		public delegate object DecodeDelegate(string x, int f, out int endIndex);
 
 		private static Dictionary<Type, EncodeDelegate> encode_func = new Dictionary<Type, EncodeDelegate>(){
-			{typeof(string),	encode_string},
-			{typeof(int),		encode_int},
-			{typeof(long),		encode_int},
-			{typeof(object[]),	encode_list},
+			{typeof(string),						encode_string},
+			{typeof(int),							encode_int},
+			{typeof(long),							encode_int},
+			{typeof(object[]),						encode_list},
+			{typeof(Dictionary<object, object>),	encode_dict}
 		};
 
 		private static Dictionary<char, DecodeDelegate> decode_func = new Dictionary<char, DecodeDelegate>(){
@@ -72,6 +73,7 @@ namespace rencodesharp
 			{CHR_INT4,	decode_int4},
 			{CHR_INT8,	decode_int8},
 			{CHR_LIST,	decode_list},
+			{CHR_DICT,	decode_dict},
 		};
 
 		#region Initialization
@@ -93,6 +95,10 @@ namespace rencodesharp
 			for(int i = 0; i < INT_NEG_FIXED_COUNT; i++) {
 				decode_func.Add((char)(INT_NEG_FIXED_START + i), decode_fixed_neg_int);
 			}
+
+			for(int i = 0; i < DICT_FIXED_COUNT; i++) {
+				decode_func.Add((char)(DICT_FIXED_START + i), decode_fixed_dict);
+			}
 		}
 
 		private static object decode_fixed_string(string x, int f, out int endIndex)
@@ -106,6 +112,7 @@ namespace rencodesharp
 			endIndex = f + 1;
 			return ((int)x[f]) - INT_POS_FIXED_START;
 		}
+
 
 		private static object decode_fixed_neg_int(string x, int f, out int endIndex)
 		{
@@ -127,6 +134,23 @@ namespace rencodesharp
 
 			endIndex = f;
 			return r.ToArray();
+		}
+
+		private static object decode_fixed_dict(string x, int f, out int endIndex)
+		{
+			Dictionary<object, object> r = new Dictionary<object, object>();
+			int dict_count = ((int)x[f]) - DICT_FIXED_START;
+			f = f + 1;
+
+			for(int i = 0; i < dict_count; i++)
+			{
+				object k = decode_func[x[f]](x, f, out f);
+				object v = decode_func[x[f]](x, f, out f);
+				r.Add(k ,v);
+			}
+
+			endIndex = f;
+			return r;
 		}
 
 		#endregion
@@ -231,6 +255,30 @@ namespace rencodesharp
 			}
 		}
 
+		public static void encode_dict(object x, List<object> r)
+		{
+			if(x.GetType() != typeof(Dictionary<object, object>)) throw new Exception();
+			Dictionary<object, object> xd = (Dictionary<object, object>)x;
+
+			if(xd.Count < DICT_FIXED_COUNT)
+			{
+				r.Add((char)(DICT_FIXED_START + xd.Count));
+				foreach(KeyValuePair<object, object> kv in xd)
+				{
+					encode_func[kv.Key.GetType()](kv.Key, r);
+					encode_func[kv.Value.GetType()](kv.Value, r);
+				}
+			} else {
+				r.Add((char)CHR_DICT);
+				foreach(KeyValuePair<object, object> kv in xd)
+				{
+					encode_func[kv.Key.GetType()](kv.Key, r);
+					encode_func[kv.Value.GetType()](kv.Value, r);
+				}
+				r.Add((char)CHR_TERM);
+			}
+		}
+
 		#endregion
 
 		#region Decode
@@ -310,6 +358,21 @@ namespace rencodesharp
 				object v = decode_func[x[f]](x, f, out f);
 				r.Add(v);
 			}
+			endIndex = f + 1;
+			return r.ToArray();
+		}
+
+		public static object decode_dict(string x, int f, out int endIndex)
+		{
+			Dictionary<object, object> r = new Dictionary<object, object>();
+			f = f + 1;
+			while(x[f] != CHR_TERM)
+			{
+				object k = decode_func[x[f]](x, f, out f);
+				object v = decode_func[x[f]](x, f, out f);
+				r.Add(k, v);
+			}
+
 			endIndex = f + 1;
 			return r;
 		}
