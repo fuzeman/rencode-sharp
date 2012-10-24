@@ -326,7 +326,7 @@ namespace rencodesharp
 		private static string decode_string(string x, int f, out int endIndex)
 		{
 			int colon = x.IndexOf(':', f);
-			int n = Convert.ToInt32(x.Substring(f, colon)); // TODO: doesn't support long length
+			int n = Convert.ToInt32(x.Substring(f, colon - f)); // TODO: doesn't support long length
 
 			colon += 1;
 			string s = x.Substring(colon, (int)n);
