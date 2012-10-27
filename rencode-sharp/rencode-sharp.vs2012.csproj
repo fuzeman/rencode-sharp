@@ -40,6 +40,10 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <Compile Include="Conversion\BigEndianBitConverter.cs" />
+    <Compile Include="Conversion\EndianBitConverter.cs" />
+    <Compile Include="Conversion\Endianness.cs" />
+    <Compile Include="Conversion\LittleEndianBitConverter.cs" />
     <Compile Include="Rencode.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="BStruct.cs" />

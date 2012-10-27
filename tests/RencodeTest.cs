@@ -29,16 +29,20 @@ namespace rencodesharp_tests
 			Assert.AreEqual(RencodeConst.CHR_INT1 + "\x88", Rencode.Encode(-120));
 
 			// ENCODE INT2
-			Assert.AreEqual(RencodeConst.CHR_INT2 + "\x04\x06", Rencode.Encode(1540));
-			Assert.AreEqual(RencodeConst.CHR_INT2 + "\xFC\xF9", Rencode.Encode(-1540));
+			Assert.AreEqual(RencodeConst.CHR_INT2 + "\x06\x04", Rencode.Encode(1540));
+			Assert.AreEqual(RencodeConst.CHR_INT2 + "\xF9\xFC", Rencode.Encode(-1540));
 
 			// ENCODE INT4
-			Assert.AreEqual(RencodeConst.CHR_INT4 + "\xD0\xFF\xFF\x7F", Rencode.Encode(2147483600));
-			Assert.AreEqual(RencodeConst.CHR_INT4 + "\x30\x00\x00\x80", Rencode.Encode(-2147483600));
+			Assert.AreEqual(RencodeConst.CHR_INT4 + "\x7F\xff\xff\xd0", Rencode.Encode(2147483600));
+			Assert.AreEqual(RencodeConst.CHR_INT4 + "\x80\x00\x00\x30", Rencode.Encode(-2147483600));
 
 			// ENCODE INT8
-			Assert.AreEqual(RencodeConst.CHR_INT8 + "\xE0\xD7\xFE\xFF\xFF\xFF\xFF\x7F", Rencode.Encode(9223372036854700000L));
-			Assert.AreEqual(RencodeConst.CHR_INT8 + "\x20\x28\x01\x00\x00\x00\x00\x80", Rencode.Encode(-9223372036854700000L));
+			Assert.AreEqual(65,  (int)Rencode.Encode(9223372036854700000L)[0]);
+			Assert.AreEqual(127, (int)Rencode.Encode(9223372036854700000L)[1]);
+			Assert.AreEqual(255, (int)Rencode.Encode(9223372036854700000L)[2]);
+			Assert.AreEqual(255, (int)Rencode.Encode(9223372036854700000L)[3]);
+			Assert.AreEqual(RencodeConst.CHR_INT8 + "\x7F\xFF\xFF\xFF\xFF\xFE\xD7\xE0", Rencode.Encode(9223372036854700000L));
+			Assert.AreEqual(RencodeConst.CHR_INT8 + "\x80\x00\x00\x00\x00\x01( ", Rencode.Encode(-9223372036854700000L));
 
 
 			// DECODE INT
@@ -49,16 +53,16 @@ namespace rencodesharp_tests
 			Assert.AreEqual(-120, Rencode.Decode(RencodeConst.CHR_INT1 + "\x88"));
 
 			// DECODE INT2
-			Assert.AreEqual(1540, Rencode.Decode(RencodeConst.CHR_INT2 + "\x04\x06"));
-			Assert.AreEqual(-1540, Rencode.Decode(RencodeConst.CHR_INT2 + "\xFC\xF9"));
+			Assert.AreEqual(1540, Rencode.Decode(RencodeConst.CHR_INT2 + "\x06\x04"));
+			Assert.AreEqual(-1540, Rencode.Decode(RencodeConst.CHR_INT2 + "\xF9\xFC"));
 
 			// DECODE INT4
-			Assert.AreEqual(2147483600, Rencode.Decode(RencodeConst.CHR_INT4 + "\xD0\xFF\xFF\x7F"));
-			Assert.AreEqual(-2147483600, Rencode.Decode(RencodeConst.CHR_INT4 + "\x30\x00\x00\x80"));
+			Assert.AreEqual(2147483600, Rencode.Decode(RencodeConst.CHR_INT4 + "\x7f\xff\xff\xd0"));
+			Assert.AreEqual(-2147483600, Rencode.Decode(RencodeConst.CHR_INT4 + "\x80\x00\x00\x30"));
 
 			// DECODE INT8
-			Assert.AreEqual(9223372036854700000L, Rencode.Decode(RencodeConst.CHR_INT8 + "\xE0\xD7\xFE\xFF\xFF\xFF\xFF\x7F"));
-			Assert.AreEqual(-9223372036854700000L, Rencode.Decode(RencodeConst.CHR_INT8 + "\x20\x28\x01\x00\x00\x00\x00\x80"));
+			Assert.AreEqual(9223372036854700000L, Rencode.Decode(RencodeConst.CHR_INT8 + "\x7F\xFF\xFF\xFF\xFF\xFE\xD7\xE0"));
+			Assert.AreEqual(-9223372036854700000L, Rencode.Decode(RencodeConst.CHR_INT8 + "\x80\x00\x00\x00\x00\x01( "));
 		}
 
 		[Test()]

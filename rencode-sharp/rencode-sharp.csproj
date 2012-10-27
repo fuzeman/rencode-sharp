@@ -39,5 +39,12 @@
     <Compile Include="Util.cs" />
     <Compile Include="BStruct.cs" />
     <Compile Include="RencodeConst.cs" />
+    <Compile Include="Conversion\BigEndianBitConverter.cs" />
+    <Compile Include="Conversion\EndianBitConverter.cs" />
+    <Compile Include="Conversion\Endianness.cs" />
+    <Compile Include="Conversion\LittleEndianBitConverter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Conversion\" />
   </ItemGroup>
 </Project>
