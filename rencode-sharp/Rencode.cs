@@ -18,56 +18,55 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace rencodesharp
 {
 	public class Rencode
 	{
-		private delegate void EncodeDelegate(object x, List<object> r);
-		private delegate object DecodeDelegate(string x, int f, out int endIndex);
+		private delegate void EncodeDelegate(object x, List<object> dest);
+		private delegate object DecodeDelegate(string x, int startIndex, out int endIndex);
 
-		private static Dictionary<Type, EncodeDelegate> encode_func = new Dictionary<Type, EncodeDelegate>(){
-			{typeof(string),						encode_string},
+		private static readonly Dictionary<Type, EncodeDelegate> EncodeFunc = new Dictionary<Type, EncodeDelegate>(){
+			{typeof(string),						EncodeString},
 
-			{typeof(int),							encode_int},
-			{typeof(long),							encode_int},
-			{typeof(float),							encode_float},
-			{typeof(double),						encode_double},
+			{typeof(int),							EncodeInt},
+			{typeof(long),							EncodeInt},
+			{typeof(float),							EncodeFloat},
+			{typeof(double),						EncodeDouble},
 
-			{typeof(object[]),						encode_list},
-			{typeof(Dictionary<object, object>),	encode_dict},
+			{typeof(object[]),						EncodeList},
+			{typeof(Dictionary<object, object>),	EncodeDictionary},
 
-			{typeof(bool),							encode_bool},
+			{typeof(bool),							EncodeBool},
 		};
 
-		private static Dictionary<char, DecodeDelegate> decode_func = new Dictionary<char, DecodeDelegate>(){
-			{'0', 		decode_string},
-			{'1', 		decode_string},
-			{'2', 		decode_string},
-			{'3', 		decode_string},
-			{'4', 		decode_string},
-			{'5', 		decode_string},
-			{'6', 		decode_string},
-			{'7', 		decode_string},
-			{'8', 		decode_string},
-			{'9', 		decode_string},
+		private static readonly Dictionary<char, DecodeDelegate> DecodeFunc = new Dictionary<char, DecodeDelegate>(){
+			{'0', 		DecodeString},
+			{'1', 		DecodeString},
+			{'2', 		DecodeString},
+			{'3', 		DecodeString},
+			{'4', 		DecodeString},
+			{'5', 		DecodeString},
+			{'6', 		DecodeString},
+			{'7', 		DecodeString},
+			{'8', 		DecodeString},
+			{'9', 		DecodeString},
 
-			{RencodeConst.CHR_INT,	decode_int},
-			{RencodeConst.CHR_INT1,	decode_int1},
-			{RencodeConst.CHR_INT2,	decode_int2},
-			{RencodeConst.CHR_INT4,	decode_int4},
-			{RencodeConst.CHR_INT8,	decode_int8},
-			{RencodeConst.CHR_FLOAT32,	decode_float},
-			{RencodeConst.CHR_FLOAT64,	decode_double},
+			{RencodeConst.CHR_INT,	DecodeInt},
+			{RencodeConst.CHR_INT1,	DecodeInt1},
+			{RencodeConst.CHR_INT2,	DecodeInt2},
+			{RencodeConst.CHR_INT4,	DecodeInt4},
+			{RencodeConst.CHR_INT8,	DecodeInt8},
+			{RencodeConst.CHR_FLOAT32,	DecodeFloat},
+			{RencodeConst.CHR_FLOAT64,	DecodeDouble},
 
-			{RencodeConst.CHR_LIST,	decode_list},
-			{RencodeConst.CHR_DICT,	decode_dict},
+			{RencodeConst.CHR_LIST,	DecodeList},
+			{RencodeConst.CHR_DICT,	DecodeDictionary},
 
-			{RencodeConst.CHR_TRUE,	decode_bool_true},
-			{RencodeConst.CHR_FALSE,	decode_bool_false},
-			{RencodeConst.CHR_NONE,	decode_null},
+			{RencodeConst.CHR_TRUE,	DecodeBoolTrue},
+			{RencodeConst.CHR_FALSE,	DecodeBoolFalse},
+			{RencodeConst.CHR_NONE,	DecodeNull},
 		};
 
 		#region Initialization
@@ -75,76 +74,75 @@ namespace rencodesharp
 		static Rencode()
 		{
 			for(int i = 0; i < RencodeConst.STR_FIXED_COUNT; i++) {
-				decode_func.Add((char)(RencodeConst.STR_FIXED_START + i), decode_fixed_string);
+				DecodeFunc.Add((char)(RencodeConst.STR_FIXED_START + i), DecodeFixedString);
 			}
 
 			for(int i = 0; i < RencodeConst.LIST_FIXED_COUNT; i++) {
-				decode_func.Add((char)(RencodeConst.LIST_FIXED_START + i), decode_fixed_list);
+				DecodeFunc.Add((char)(RencodeConst.LIST_FIXED_START + i), DecodeFixedList);
 			}
 
 			for(int i = 0; i < RencodeConst.INT_POS_FIXED_COUNT; i++) {
-				decode_func.Add((char)(RencodeConst.INT_POS_FIXED_START + i), decode_fixed_pos_int);
+				DecodeFunc.Add((char)(RencodeConst.INT_POS_FIXED_START + i), DecodeFixedPositiveInt);
 			}
 
 			for(int i = 0; i < RencodeConst.INT_NEG_FIXED_COUNT; i++) {
-				decode_func.Add((char)(RencodeConst.INT_NEG_FIXED_START + i), decode_fixed_neg_int);
+				DecodeFunc.Add((char)(RencodeConst.INT_NEG_FIXED_START + i), DecodeFixedNegativeInt);
 			}
 
 			for(int i = 0; i < RencodeConst.DICT_FIXED_COUNT; i++) {
-				decode_func.Add((char)(RencodeConst.DICT_FIXED_START + i), decode_fixed_dict);
+				DecodeFunc.Add((char)(RencodeConst.DICT_FIXED_START + i), DecodeFixedDictionary);
 			}
 		}
 
-		private static object decode_fixed_string(string x, int f, out int endIndex)
+		private static object DecodeFixedString(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1 + ((int)x[f]) - RencodeConst.STR_FIXED_START;
-			return x.Substring(f + 1, ((int)x[f]) - RencodeConst.STR_FIXED_START);
+			endIndex = startIndex + 1 + x[startIndex] - RencodeConst.STR_FIXED_START;
+			return x.Substring(startIndex + 1, x[startIndex] - RencodeConst.STR_FIXED_START);
 		}
 
-		private static object decode_fixed_pos_int(string x, int f, out int endIndex)
+		private static object DecodeFixedPositiveInt(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1;
-			return ((int)x[f]) - RencodeConst.INT_POS_FIXED_START;
+			endIndex = startIndex + 1;
+			return x[startIndex] - RencodeConst.INT_POS_FIXED_START;
 		}
 
-
-		private static object decode_fixed_neg_int(string x, int f, out int endIndex)
+		private static object DecodeFixedNegativeInt(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1;
-			return -1 - (((int)x[f]) - RencodeConst.INT_NEG_FIXED_START);
+			endIndex = startIndex + 1;
+			return -1 - (x[startIndex] - RencodeConst.INT_NEG_FIXED_START);
 		}
 
-		private static object decode_fixed_list(string x, int f, out int endIndex)
+		private static object DecodeFixedList(string x, int startIndex, out int endIndex)
 		{
-			List<object> r = new List<object>();
-			int list_count = ((int)x[f]) - RencodeConst.LIST_FIXED_START;
-			f = f + 1;
+			var result = new List<object>();
+			int listCount = x[startIndex] - RencodeConst.LIST_FIXED_START;
+			startIndex = startIndex + 1;
 
-			for(int i = 0; i < list_count; i++)
+			for(int i = 0; i < listCount; i++)
 			{
-				object v = obj_decode(x, f, out f);
-				r.Add(v);
+				object v = DecodeObject(x, startIndex, out startIndex);
+				result.Add(v);
 			}
 
-			endIndex = f;
-			return r.ToArray();
+			endIndex = startIndex;
+			return result.ToArray();
 		}
 
-		private static object decode_fixed_dict(string x, int f, out int endIndex)
+		private static object DecodeFixedDictionary(string x, int startIndex, out int endIndex)
 		{
-			Dictionary<object, object> r = new Dictionary<object, object>();
-			int dict_count = ((int)x[f]) - RencodeConst.DICT_FIXED_START;
-			f = f + 1;
+			var result = new Dictionary<object, object>();
+			int dictCount = x[startIndex] - RencodeConst.DICT_FIXED_START;
+			startIndex = startIndex + 1;
 
-			for(int i = 0; i < dict_count; i++)
+			for(int i = 0; i < dictCount; i++)
 			{
-				object k = obj_decode(x, f, out f);
-				object v = obj_decode(x, f, out f);
-				r.Add(k ,v);
+				object k = DecodeObject(x, startIndex, out startIndex);
+				object v = DecodeObject(x, startIndex, out startIndex);
+				result.Add(k ,v);
 			}
 
-			endIndex = f;
-			return r;
+			endIndex = startIndex;
+			return result;
 		}
 
 		#endregion
@@ -156,14 +154,14 @@ namespace rencodesharp
 		/// </summary>
 		public static string Encode(object x)
 		{
-			if(x != null && !encode_func.ContainsKey(x.GetType())){
+			if(x != null && !EncodeFunc.ContainsKey(x.GetType())){
 				throw new Exception("No Encoder Found");
 			}
 
-			List<object> r = new List<object>();
-			obj_encode(x, r);
+			var dest = new List<object>();
+			EncodeObject(x, dest);
 
-			return Util.Join(r);
+			return Util.Join(dest);
 		}
 
 		/// <summary>
@@ -171,185 +169,177 @@ namespace rencodesharp
 		/// </summary>
 		public static object Decode(string x)
 		{
-			if(!decode_func.ContainsKey(x[0])){
+			if(!DecodeFunc.ContainsKey(x[0])){
 				throw new Exception("No Decoder Found");
 			}
 
 			int endIndex;
-			return obj_decode(x, 0, out endIndex);
+			return DecodeObject(x, 0, out endIndex);
 		}
 
 		#endregion
 
 		#region Encode
 
-		private static void obj_encode(object x, List<object> r)
+		private static void EncodeObject(object x, List<object> dest)
 		{
 			if(x == null)
-				encode_null(x, r);
+				encode_null(null, dest);
 			else
-				encode_func[x.GetType()](x, r);
+				EncodeFunc[x.GetType()](x, dest);
 		}
 
-		private static void encode_string(object x, List<object> r)
+		private static void EncodeString(object x, List<object> dest)
 		{
-			string xs = (string)x;
+			var xs = (string)x;
 
 			if (xs.Length < RencodeConst.STR_FIXED_COUNT) {
-				r.Add((char)(RencodeConst.STR_FIXED_START + xs.Length));
-				r.Add(xs);
+				dest.Add((char)(RencodeConst.STR_FIXED_START + xs.Length));
+				dest.Add(xs);
 			} else {
-				r.Add(xs.Length.ToString());
-				r.Add(':');
-				r.Add(xs);
+				dest.Add(xs.Length.ToString());
+				dest.Add(':');
+				dest.Add(xs);
 			}
 		}
 
-		private static void encode_int(object x, List<object> r)
+		private static void EncodeInt(object x, List<object> dest)
 		{
 			// Check to determine if long type is able
 			// to be packed inside an Int32 or is actually
 			// an Int64 value.
-			bool isLong = false;
-			if(x.GetType() == typeof(long) &&(
-				((long)x) > int.MaxValue ||
-				((long)x) < int.MinValue))
-					isLong = true;
-
+			bool isLong = x is long && (((long)x) > int.MaxValue || ((long)x) < int.MinValue);
 
 			if(!isLong && 0 <= (int)x && (int)x < RencodeConst.INT_POS_FIXED_COUNT) {
-				r.Add((char)(RencodeConst.INT_POS_FIXED_START+(int)x));
+				dest.Add((char)(RencodeConst.INT_POS_FIXED_START+(int)x));
 			} else if(!isLong && -RencodeConst.INT_NEG_FIXED_COUNT <= (int)x && (int)x < 0) {
-				r.Add((char)(RencodeConst.INT_NEG_FIXED_START-1-(int)x));
+				dest.Add((char)(RencodeConst.INT_NEG_FIXED_START-1-(int)x));
 			} else if(!isLong && -128 <= (int)x && (int)x < 128) {
-				r.Add(RencodeConst.CHR_INT1);
-				r.Add(BStruct.Pack(x, 1));
+				dest.Add(RencodeConst.CHR_INT1);
+				dest.Add(BStruct.Pack(x, 1));
 			} else if(!isLong && -32768 <= (int)x && (int)x < 32768) {
-				r.Add(RencodeConst.CHR_INT2);
-				r.Add(BStruct.Pack(x, 2));
+				dest.Add(RencodeConst.CHR_INT2);
+				dest.Add(BStruct.Pack(x, 2));
 			} else if(-2147483648L <= Convert.ToInt64(x) && Convert.ToInt64(x) < 2147483648L) {
-				r.Add(RencodeConst.CHR_INT4);
-				r.Add(BStruct.Pack(x, 4));
+				dest.Add(RencodeConst.CHR_INT4);
+				dest.Add(BStruct.Pack(x, 4));
 			} else if(-9223372036854775808L < Convert.ToInt64(x) && Convert.ToInt64(x) < 9223372036854775807L) {
-				r.Add(RencodeConst.CHR_INT8);
-				r.Add(BStruct.Pack(x, 8));
+				dest.Add(RencodeConst.CHR_INT8);
+				dest.Add(BStruct.Pack(x, 8));
 			} else {
 				string s = (string)x;
 				if(s.Length >= RencodeConst.MAX_INT_LENGTH)
 					throw new ArgumentOutOfRangeException();
-				r.Add(RencodeConst.CHR_INT);
-				r.Add(s);
-				r.Add(RencodeConst.CHR_TERM);
+				dest.Add(RencodeConst.CHR_INT);
+				dest.Add(s);
+				dest.Add(RencodeConst.CHR_TERM);
 			}
 		}
 
-		private static void encode_float(object x, List<object> r)
+		private static void EncodeFloat(object x, List<object> dest)
 		{
-			r.Add((char)RencodeConst.CHR_FLOAT32);
-			r.Add(BStruct.Pack(x, 4));
+			dest.Add(RencodeConst.CHR_FLOAT32);
+			dest.Add(BStruct.Pack(x, 4));
 		}
 
-		private static void encode_double(object x, List<object> r)
+		private static void EncodeDouble(object x, List<object> dest)
 		{
-			r.Add((char)RencodeConst.CHR_FLOAT64);
-			r.Add(BStruct.Pack(x, 8));
+			dest.Add(RencodeConst.CHR_FLOAT64);
+			dest.Add(BStruct.Pack(x, 8));
 		}
 
-		private static void encode_list(object x, List<object> r)
+		private static void EncodeList(object x, List<object> dest)
 		{
 			if(x.GetType() != typeof(object[])) throw new Exception();
-			object[] xl = (object[])x;
+			var xl = (object[])x;
 
 			if(xl.Length < RencodeConst.LIST_FIXED_COUNT) {
-				r.Add((char)(RencodeConst.LIST_FIXED_START + xl.Length));
+				dest.Add((char)(RencodeConst.LIST_FIXED_START + xl.Length));
 				foreach(object e in xl)
-					obj_encode(e, r);
+					EncodeObject(e, dest);
 			} else {
-				r.Add(RencodeConst.CHR_LIST);
+				dest.Add(RencodeConst.CHR_LIST);
 				foreach(object e in xl)
-					obj_encode(e, r);
-				r.Add(RencodeConst.CHR_TERM);
+					EncodeObject(e, dest);
+				dest.Add(RencodeConst.CHR_TERM);
 			}
 		}
 
-		private static void encode_dict(object x, List<object> r)
+		private static void EncodeDictionary(object x, List<object> dest)
 		{
 			if(x.GetType() != typeof(Dictionary<object, object>)) throw new Exception();
-			Dictionary<object, object> xd = (Dictionary<object, object>)x;
+			var xd = (Dictionary<object, object>)x;
 
 			if(xd.Count < RencodeConst.DICT_FIXED_COUNT)
 			{
-				r.Add((char)(RencodeConst.DICT_FIXED_START + xd.Count));
+				dest.Add((char)(RencodeConst.DICT_FIXED_START + xd.Count));
 				foreach(KeyValuePair<object, object> kv in xd)
 				{
-					obj_encode(kv.Key, r);
-					obj_encode(kv.Value, r);
+					EncodeObject(kv.Key, dest);
+					EncodeObject(kv.Value, dest);
 				}
 			} else {
-				r.Add((char)RencodeConst.CHR_DICT);
+				dest.Add(RencodeConst.CHR_DICT);
 				foreach(KeyValuePair<object, object> kv in xd)
 				{
-					obj_encode(kv.Key, r);
-					obj_encode(kv.Value, r);
+					EncodeObject(kv.Key, dest);
+					EncodeObject(kv.Value, dest);
 				}
-				r.Add((char)RencodeConst.CHR_TERM);
+				dest.Add(RencodeConst.CHR_TERM);
 			}
 		}
 
-		private static void encode_bool(object x, List<object> r)
+		private static void EncodeBool(object x, List<object> dest)
 		{
 			if(x.GetType() != typeof(bool)) throw new Exception();
-			bool xb = (bool)x;
+			var xb = (bool)x;
 
-			if(xb == true)
-				r.Add((char)RencodeConst.CHR_TRUE);
-			else
-				r.Add((char)RencodeConst.CHR_FALSE);
+		    dest.Add(xb ? RencodeConst.CHR_TRUE : RencodeConst.CHR_FALSE);
 		}
 
-		private static void encode_null(object x, List<object> r)
+		private static void encode_null(object x, List<object> dest)
 		{
 			if(x != null) throw new Exception();
 
-			r.Add((char)RencodeConst.CHR_NONE);
+			dest.Add(RencodeConst.CHR_NONE);
 		}
 
 		#endregion
 
 		#region Decode
 
-		private static object obj_decode(string x, int f, out int endIndex)
+		private static object DecodeObject(string x, int startIndex, out int endIndex)
 		{
-			return decode_func[x[f]](x, f, out endIndex);
+			return DecodeFunc[x[startIndex]](x, startIndex, out endIndex);
 		}
 
-		private static string decode_string(string x, int f, out int endIndex)
+		private static string DecodeString(string x, int startIndex, out int endIndex)
 		{
-			int colon = x.IndexOf(':', f);
-			int n = Convert.ToInt32(x.Substring(f, colon - f)); // TODO: doesn't support long length
+			int indexOfColon = x.IndexOf(':', startIndex);
+			int stringLength = Convert.ToInt32(x.Substring(startIndex, indexOfColon - startIndex)); // TODO: doesn't support long length
 
-			colon += 1;
-			string s = x.Substring(colon, (int)n);
+			indexOfColon += 1;
+			string s = x.Substring(indexOfColon, stringLength);
 
-			endIndex = colon+n;
+			endIndex = indexOfColon+stringLength;
 			return s;
 		}
 
-		private static object decode_int(string x, int f, out int endIndex)
+		private static object DecodeInt(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			int newf = x.IndexOf(RencodeConst.CHR_TERM, f);
-			if(newf - f >= RencodeConst.MAX_INT_LENGTH) {
+			startIndex += 1;
+			int newf = x.IndexOf(RencodeConst.CHR_TERM, startIndex);
+			if(newf - startIndex >= RencodeConst.MAX_INT_LENGTH) {
 				throw new Exception("Overflow");
 			}
-			long n = Convert.ToInt64(x.Substring(f, newf - f));
+			long n = Convert.ToInt64(x.Substring(startIndex, newf - startIndex));
 
-			if(x[f] == '-'){
-				if(x[f + 1] == '0') {
+			if(x[startIndex] == '-'){
+				if(x[startIndex + 1] == '0') {
 					throw new Exception("Value Error");
 				}
 			}
-			else if(x[f] == '0' && newf != f+1) {
+			else if(x[startIndex] == '0' && newf != startIndex+1) {
 				throw new Exception("Value Error");
 			}
 
@@ -357,97 +347,97 @@ namespace rencodesharp
 			return n;
 		}
 
-		private static object decode_int1(string x, int f, out int endIndex)
+		private static object DecodeInt1(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 1;
+			startIndex += 1;
+			endIndex = startIndex + 1;
 
-			return BStruct.ToInt1(Util.StringBytes(x.Substring(f, 1)), 0);
+			return BStruct.ToInt1(Util.StringBytes(x.Substring(startIndex, 1)), 0);
 		}
 
-		private static object decode_int2(string x, int f, out int endIndex)
+		private static object DecodeInt2(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 2;
+			startIndex += 1;
+			endIndex = startIndex + 2;
 
-			return BStruct.ToInt2(Util.StringBytes(x.Substring(f, 2)), 0);
+			return BStruct.ToInt2(Util.StringBytes(x.Substring(startIndex, 2)), 0);
 		}
 
-		private static object decode_int4(string x, int f, out int endIndex)
+		private static object DecodeInt4(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 4;
+			startIndex += 1;
+			endIndex = startIndex + 4;
 
-			return BStruct.ToInt4(Util.StringBytes(x.Substring(f, 4)), 0);
+            return BStruct.ToInt4(Util.StringBytes(x.Substring(startIndex, 4)), 0);
 		}
 
-		private static object decode_int8(string x, int f, out int endIndex)
+		private static object DecodeInt8(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 8;
+			startIndex += 1;
+			endIndex = startIndex + 8;
 
-			return BStruct.ToInt8(Util.StringBytes(x.Substring(f, 8)), 0);
+			return BStruct.ToInt8(Util.StringBytes(x.Substring(startIndex, 8)), 0);
 		}
 
-		private static object decode_float(string x, int f, out int endIndex)
+		private static object DecodeFloat(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 4;
+			startIndex += 1;
+			endIndex = startIndex + 4;
 
-			return BStruct.ToFloat(Util.StringBytes(x.Substring(f, 4)), 0);
+			return BStruct.ToFloat(Util.StringBytes(x.Substring(startIndex, 4)), 0);
 		}
 
-		private static object decode_double(string x, int f, out int endIndex)
+		private static object DecodeDouble(string x, int startIndex, out int endIndex)
 		{
-			f += 1;
-			endIndex = f + 8;
+			startIndex += 1;
+			endIndex = startIndex + 8;
 
-			return BStruct.ToDouble(Util.StringBytes(x.Substring(f, 8)), 0);
+			return BStruct.ToDouble(Util.StringBytes(x.Substring(startIndex, 8)), 0);
 		}
 
-		private static object decode_list(string x, int f, out int endIndex)
+		private static object DecodeList(string x, int startIndex, out int endIndex)
 		{
-			List<object> r = new List<object>();
-			f = f + 1;
-			while(x[f] != RencodeConst.CHR_TERM)
+			var result = new List<object>();
+			startIndex = startIndex + 1;
+			while(x[startIndex] != RencodeConst.CHR_TERM)
 			{
-				object v = obj_decode(x, f, out f);
-				r.Add(v);
+				object v = DecodeObject(x, startIndex, out startIndex);
+				result.Add(v);
 			}
-			endIndex = f + 1;
-			return r.ToArray();
+			endIndex = startIndex + 1;
+			return result.ToArray();
 		}
 
-		private static object decode_dict(string x, int f, out int endIndex)
+		private static object DecodeDictionary(string x, int startIndex, out int endIndex)
 		{
-			Dictionary<object, object> r = new Dictionary<object, object>();
-			f = f + 1;
-			while(x[f] != RencodeConst.CHR_TERM)
+			var result = new Dictionary<object, object>();
+			startIndex = startIndex + 1;
+			while(x[startIndex] != RencodeConst.CHR_TERM)
 			{
-				object k = obj_decode(x, f, out f);
-				object v = obj_decode(x, f, out f);
-				r.Add(k, v);
+				object k = DecodeObject(x, startIndex, out startIndex);
+				object v = DecodeObject(x, startIndex, out startIndex);
+				result.Add(k, v);
 			}
 
-			endIndex = f + 1;
-			return r;
+			endIndex = startIndex + 1;
+			return result;
 		}
 
-		private static object decode_bool_true(string x, int f, out int endIndex)
+		private static object DecodeBoolTrue(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1;
+			endIndex = startIndex + 1;
 			return true;
 		}
 
-		private static object decode_bool_false(string x, int f, out int endIndex)
+		private static object DecodeBoolFalse(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1;
+			endIndex = startIndex + 1;
 			return false;
 		}
 
-		private static object decode_null(string x, int f, out int endIndex)
+		private static object DecodeNull(string x, int startIndex, out int endIndex)
 		{
-			endIndex = f + 1;
+			endIndex = startIndex + 1;
 			return null;
 		}
 
