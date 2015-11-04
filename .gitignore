@@ -1,7 +1,8 @@
+/TestResults
+
+bin
+obj
 
 *.suo
 *.user
 *.userprefs
-bin
-obj
-tests/test-results
