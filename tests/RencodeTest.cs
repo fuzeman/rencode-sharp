@@ -44,10 +44,9 @@ namespace rencodesharp_tests
 			Assert.AreEqual(RencodeConst.CHR_INT8 + "\x7F\xFF\xFF\xFF\xFF\xFE\xD7\xE0", Rencode.Encode(9223372036854700000L));
 			Assert.AreEqual(RencodeConst.CHR_INT8 + "\x80\x00\x00\x00\x00\x01( ", Rencode.Encode(-9223372036854700000L));
 
-
 			// DECODE INT
 			Assert.AreEqual(1000, Rencode.Decode(RencodeConst.CHR_INT + "1000" + RencodeConst.CHR_TERM));
-;
+
 			// DECODE INT1
 			Assert.AreEqual(120, Rencode.Decode(RencodeConst.CHR_INT1 + "\x78"));
 			Assert.AreEqual(-120, Rencode.Decode(RencodeConst.CHR_INT1 + "\x88"));
