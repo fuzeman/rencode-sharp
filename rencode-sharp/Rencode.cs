@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace rencodesharp
 {
@@ -49,6 +50,8 @@ namespace rencodesharp
 			{RencodeConst.CHR_FALSE,	DecodeBoolFalse},
 			{RencodeConst.CHR_NONE,	DecodeNull},
 		};
+
+		private static readonly Encoding Encoding = Encoding.GetEncoding("iso-8859-1");
 
 		#region Initialization
 
@@ -156,6 +159,14 @@ namespace rencodesharp
 
 			int endIndex;
 			return DecodeObject(x, 0, out endIndex);
+		}
+
+		/// <summary>
+		/// Decode rencode bytes 'x' into object.
+		/// </summary>
+		public static object Decode(byte[] x)
+		{
+			return Decode(Encoding.GetString(x));
 		}
 
 		#endregion
