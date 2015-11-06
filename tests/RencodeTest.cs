@@ -182,6 +182,28 @@ namespace rencodesharp_tests
 			Assert.AreEqual(0.005353d, Rencode.Decode(Rencode.Encode(0.005353d)));
 			Assert.AreEqual(-0.005353d, Rencode.Decode(Rencode.Encode(-0.005353d)));
 		}
+
+		[Test()]
+		public void Bytes()
+		{
+			byte[] data = new byte[] { 193, 196, 0, 140, 100, 97, 101, 109, 111, 110, 46, 108, 111, 103, 105, 110, 194, 136, 117, 115, 101, 114, 110, 97, 109, 101, 136, 112, 97, 115, 115, 119, 111, 114, 100, 102 };
+
+			// Decode string
+			var result = (object[])Rencode.Decode(data);
+			var parts = (object[])result[0];
+
+			var credentials = (object[])parts[2];
+			var options = (Dictionary<object, object>)parts[3];
+
+			// Validate result
+			Assert.AreEqual(0, parts[0]);
+			Assert.AreEqual("daemon.login", parts[1]);
+
+			Assert.AreEqual("username", credentials[0]);
+			Assert.AreEqual("password", credentials[1]);
+
+			Assert.AreEqual(0, options.Count);
+		}
 	}
 }
 
