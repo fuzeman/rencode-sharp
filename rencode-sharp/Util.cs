@@ -1,6 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace rencodesharp
 {
@@ -11,12 +10,7 @@ namespace rencodesharp
 		/// </summary>
 		public static string Join(List<object> r)
 		{
-			string output = "";
-			for(int i = 0; i < r.Count; i++)
-			{
-				output += r[i].ToString();
-			}
-			return output;
+		    return string.Concat(r.ToArray());
 		}
 
 		/// <summary>
@@ -24,12 +18,7 @@ namespace rencodesharp
 		/// </summary>
 		public static byte[] StringBytes(string s)
 		{
-			byte[] b = new byte[s.Length];
-			for(int i = 0; i < s.Length; i++)
-			{
-				b[i] = (byte)(int)s[i];
-			}
-			return b;
+		    return Encoding.UTF8.GetBytes(s);
 		}
 
 		/// <summary>
