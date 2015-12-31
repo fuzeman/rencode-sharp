@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace rencodesharp
@@ -18,6 +19,8 @@ namespace rencodesharp
 			{typeof(double),						EncodeDouble},
 
 			{typeof(object[]),						EncodeList},
+            {typeof(List<object>),                  EncodeList},
+
 			{typeof(Dictionary<object, object>),	EncodeDictionary},
 
 			{typeof(bool),							EncodeBool},
@@ -242,8 +245,11 @@ namespace rencodesharp
 
 		private static void EncodeList(object x, List<object> dest)
 		{
-			if(x.GetType() != typeof(object[])) throw new Exception();
-			var xl = (object[])x;
+		    var listItems = x as IEnumerable<object>;
+		    if(listItems == null)
+                throw new Exception();
+
+		    object[] xl = listItems.ToArray();
 
 			if(xl.Length < RencodeConst.LIST_FIXED_COUNT) {
 				dest.Add((char)(RencodeConst.LIST_FIXED_START + xl.Length));
