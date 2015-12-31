@@ -179,7 +179,7 @@ namespace rencodesharp
 		private static void EncodeObject(object x, List<object> dest)
 		{
 			if(x == null)
-				encode_null(null, dest);
+				EncodeNull(null, dest);
 			else
 				EncodeFunc[x.GetType()](x, dest);
 		}
@@ -295,7 +295,7 @@ namespace rencodesharp
 		    dest.Add(xb ? RencodeConst.CHR_TRUE : RencodeConst.CHR_FALSE);
 		}
 
-		private static void encode_null(object x, List<object> dest)
+		private static void EncodeNull(object x, List<object> dest)
 		{
 			if(x != null) throw new Exception();
 
